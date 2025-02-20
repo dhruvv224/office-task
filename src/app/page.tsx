@@ -1,101 +1,215 @@
-import Image from "next/image";
-
+"use client";
+import React, { useEffect, useState } from 'react';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import Image from 'next/image';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button as MUIButton, TextField } from '@mui/material';
+import { set } from 'react-hook-form';
+import Snackbar from '@mui/material/Snackbar';
+import Grow, { GrowProps } from '@mui/material/Grow';
+import SnackbarAlert from './Snackbar';
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  interface User {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    dateOfbirth: string;
+    gender: string;
+    address: string;
+  }
+  
+  const [users, setUsers] = useState<User[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogOpenEdit, setDialogOpenedit] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+  const [deleteUserIndex, setDeleteUserIndex] = useState<number | null>(null);
+  const [editUserIndex,setEditUserIndex]=useState<number |null>(null)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedData = localStorage.getItem('users');
+      if (storedData) {
+        setUsers(JSON.parse(storedData));
+      }
+    }
+  }, []);
+  
+  const handleDeleteClick = (index: number) => {
+    setDeleteUserIndex(index);
+    setDialogOpen(true);
+  };
+  
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    setDeleteUserIndex(null);
+    setDialogOpenedit(false);
+    setEditUserIndex(null);
+  };
+
+  
+  const handleDialogConfirm = () => {
+    if (deleteUserIndex !== null) {
+      const updatedUsers = [...users];
+      updatedUsers.splice(deleteUserIndex, 1);
+      setUsers(updatedUsers);
+      setDeleteOpen(true)
+      localStorage.setItem('users', JSON.stringify(updatedUsers));
+    }
+    handleDialogClose();
+  };
+  const[editingUser,setEditingUser]=useState<User |null>(null)
+  const handleEditClick = (index: number) => {
+    setEditUserIndex(index);
+    const foundUser = users[index];
+    setEditingUser({ ...foundUser }); // Create a copy for editing
+    setDialogOpenedit(true);
+    console.log('data is ',foundUser)
+  };
+  const inputStyles = {
+    marginBottom: '20px',
+  }
+  const [editMessage,setEditMessage]=useState<string>('')
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (editingUser) {
+      const { name, value } = e.target;
+      setEditingUser({
+        ...editingUser,
+        [name]: value,
+      });
+    }
+    if(!editingUser)
+      {
+        setEditMessage('Profile not updated')
+      }
+  };
+  // saving updated user
+  const handleEditSave = () => {
+    if (editUserIndex !== null && editingUser) {
+      const updatedUsers = [...users];
+      updatedUsers[editUserIndex] = editingUser;
+      setUsers(updatedUsers);
+      localStorage.setItem('users', JSON.stringify(updatedUsers));
+      handleDialogClose(); // Close the dialog after saving
+      setEditMessage('Profile updated successfully')
+    }
+
+
+    setOpen(true)
+  };
+  const [open,setOpen]=useState<boolean>(false)
+  const[DeleteOpen,setDeleteOpen]=useState<boolean>(false)
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex justify-center py-3">
+      <h1 className="text-2xl sm:text-3xl font-semibold text-center">Welcome To The Home Page</h1>
+      </div>
+      <TableContainer component={Paper} className="overflow-x-auto">
+      <Table size='medium' className="w-full">
+      <TableHead>
+            <TableRow>
+              <TableCell>ID</TableCell>
+              <TableCell>First Name</TableCell>
+              <TableCell>Last Name</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Password</TableCell>
+              <TableCell>Date of Birth</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {users.map((user, index) => (
+              <TableRow key={index}>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>{user.firstName}</TableCell>
+                <TableCell>{user.lastName}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.password}</TableCell>
+                <TableCell>{user.dateOfbirth}</TableCell>
+                <TableCell>
+                  <div className="flex  gap-4">
+                    <button onClick={()=>handleEditClick(index)}>
+                      <Image src="/edit.svg" alt="Edit Icon" width={24} height={24} />
+                    </button>
+                    <button onClick={() => handleDeleteClick(index)}>
+                      <Image src="/delete.svg" alt="Delete Icon" width={24} height={24} />
+                    </button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={dialogOpen}
+        onClose={handleDialogClose}
+        // PaperProps={{ className: 'bg-gray-100' }}
+      >
+        <DialogTitle>Are you sure?</DialogTitle>
+        <DialogContent>
+          <p>This action cannot be undone.</p>
+        </DialogContent>
+        <DialogActions>
+          <MUIButton onClick={handleDialogConfirm} variant="contained" color="error">
+            Yes
+          </MUIButton>
+          <MUIButton onClick={handleDialogClose} variant="outlined">
+            No
+          </MUIButton>
+        </DialogActions>
+      </Dialog>
+      {/* edit confirmation  */}
+      <Dialog
+        open={dialogOpenEdit}
+        onClose={handleDialogClose}
+        PaperProps={{ className: 'bg-gray-100' }}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+                  <DialogTitle>Edit Profile</DialogTitle>
+<DialogContent>
+<p className='text-base mb-4'>Make changes to your profile here. Click save when you're done.
+
+</p>
+<TextField label='First Name' name='firstName' value={editingUser?.firstName} fullWidth sx={inputStyles} onChange={handleEditInputChange}/>
+<TextField label='Last Name' name='lastName' value={editingUser?.lastName} fullWidth sx={inputStyles} onChange={handleEditInputChange}/>
+<TextField label='Email' name='email' value={editingUser?.email} fullWidth sx={inputStyles} onChange={handleEditInputChange}/>
+<TextField label='Password' name='password' value={editingUser?.password} fullWidth sx={inputStyles} onChange={handleEditInputChange}/>
+
+<div className='date edit flex gap-x-5'>
+  <label>Date of Birth</label>
+<input type="date" className='mb-4' name="dateOfbirth" id="" value={editingUser?.dateOfbirth} onChange={handleEditInputChange}  />
+</div>
+<TextField label='Address' value={editingUser?.address} onChange={handleEditInputChange} name='address'/>
+
+
+
+</DialogContent>
+<DialogActions>
+  <MUIButton color='success' variant='contained' onClick={handleEditSave}>
+    Save
+  </MUIButton>
+  <MUIButton  color='error' variant='outlined' onClick={handleDialogClose}>
+    Cancel
+  </MUIButton>
+</DialogActions>
+        </Dialog>
+        {/* edit success */}
+        <SnackbarAlert open={open} message={editMessage} onClose={()=>setOpen(false)} severity='success'>
+
+        </SnackbarAlert>
+
+              {/* delete */}
+              <SnackbarAlert open={DeleteOpen} message='Deleted successfully' onClose={()=>setDeleteOpen(false)} severity='error'>
+
+              </SnackbarAlert>
+             
     </div>
   );
 }
